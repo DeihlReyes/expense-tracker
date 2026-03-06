@@ -1,1 +1,25 @@
-npx lint-staged
+#!/bin/sh
+
+echo "🔍 Running pre-commit checks..."
+
+# Run lint-staged with better error handling
+if ! npx lint-staged; then
+  echo ""
+  echo "❌ Pre-commit checks failed!"
+  echo ""
+  echo "🔧 Possible issues:"
+  echo "  • Files were modified by lint-staged - check git status"
+  echo "  • Prettier/ESLint errors in staged files"
+  echo "  • Git stash conflicts (try: git stash --include-untracked)"
+  echo ""
+  echo "💡 Quick fixes:"
+  echo "  • Stage the modified files: git add ."
+  echo "  • Skip hooks temporarily: git commit --no-verify"
+  echo "  • Check what changed: git diff"
+  echo ""
+  echo "📝 Your lint-staged config runs prettier on all files."
+  echo "   If prettier modified staged files, you need to stage those changes too."
+  exit 1
+fi
+
+echo "✅ Pre-commit checks passed!"
