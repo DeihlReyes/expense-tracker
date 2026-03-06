@@ -25,14 +25,19 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { authClient } from "@/lib/auth-client";
+import { signIn as defaultSignIn } from "@/lib/auth/sign-in";
 import { type SignInFormData, signInSchema } from "@/lib/schema/auth";
 import { cn } from "@/lib/utils";
 
+interface SignInFormProps extends React.ComponentProps<"div"> {
+  onSignIn?: (data: SignInFormData) => Promise<unknown>;
+}
+
 export function SignInForm({
   className,
+  onSignIn = defaultSignIn,
   ...props
-}: React.ComponentProps<"div">) {
+}: SignInFormProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
@@ -47,28 +52,14 @@ export function SignInForm({
 
   const onSubmit = async (data: SignInFormData) => {
     try {
-      // TODO: Make API call to your backend sign in endpoint
-      const { email, password, rememberMe } =
-        await signInSchema.parseAsync(data);
-
-      await authClient.signIn.email(
-        {
-          email,
-          password,
-          rememberMe,
-        },
-        {
-          onSuccess: () => {
-            toast.success("Signed in successfully!");
-            router.push("/dashboard");
-          },
-          onError: (error) => {
-            setError(error.error.message);
-          },
-        }
-      );
-    } catch (error) {
-      setError("An error occurred when parsing form data");
+      setError(null);
+      await onSignIn(data);
+      toast.success("Signed in successfully!");
+      router.push("/dashboard");
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "An error occurred during sign in";
+      setError(errorMessage);
     }
   };
 

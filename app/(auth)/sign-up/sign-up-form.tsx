@@ -1,10 +1,9 @@
 "use client";
 
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { sign } from "crypto";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -24,14 +23,20 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { authClient } from "@/lib/auth-client";
+import { signUp } from "@/lib/auth/sign-up";
 import { type SignupFormData, signupSchema } from "@/lib/schema/auth";
 import { cn } from "@/lib/utils";
 
-export function SignupForm({
+interface SignupFormProps extends React.ComponentProps<"div"> {
+  onSignUp?: (data: SignupFormData) => Promise<unknown>;
+}
+
+export function SignUpForm({
   className,
+  onSignUp = signUp,
   ...props
-}: React.ComponentProps<"div">) {
+}: SignupFormProps) {
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
   const form = useForm<SignupFormData>({
@@ -45,27 +50,15 @@ export function SignupForm({
   });
 
   const onSubmit = async (data: SignupFormData) => {
-    setError(null);
     try {
-      const { name, email, password } = await signupSchema.parseAsync(data);
-
-      // TODO: Make API call to your backend signup endpoint
-      const { error } = await authClient.signUp.email({
-        name,
-        email,
-        password,
-      });
-
-      if (error) {
-        setError(error.message || "An error occurred during signup");
-        return;
-      } else {
-        toast.success("Account created successfully!");
-        form.reset();
-        redirect("/sign-in");
-      }
-    } catch {
-      setError("An error occurred during signup");
+      setError(null);
+      await onSignUp(data);
+      toast.success("Account created successfully!");
+      router.push("/sign-in");
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "An error occurred during sign up";
+      setError(errorMessage);
     }
   };
 
